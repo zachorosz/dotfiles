@@ -11,11 +11,12 @@
   (global-display-line-numbers-mode))
 
 (setq inhibit-startup-screen 1
-      column-number-mode t)
+      column-number-mode t
+      auto-save-default nil
+      make-backup-files nil)
 
-(setq package-archives '(("melpa" . "http://melpa.org/packages/")
-			 ("org" . "http://orgmode.org/elpa/")
-			 ("gnu" . "http://elpa.gnu.org/packages/")))
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+
 (package-initialize)
 
 ;; Bootstrap use-package
@@ -63,31 +64,40 @@
   :config
   (global-set-key (kbd "C-x g") 'magit-status))
 
+(use-package company
+  :ensure t
+  :config
+  (setq company-idle-delay 0)
+  (setq company-minimum-prefix-length 1)
+  (add-hook 'after-init-hook 'global-company-mode))
+
+(use-package flycheck
+  :ensure t
+  :init (global-flycheck-mode)
+  :config
+  (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
+
 (use-package lsp-mode
   :ensure t
   :commands (lsp lsp-deferred)
   :hook (;; Add major-modes
 	 (go-mode . lsp-deferred)
+	 (typescript-mode . lsp-deferred)
 	 ;; which-key integration
 	 (lsp-mode . lsp-enable-which-key-integration)))
 
 ;; Set up before-save hooks to format buffer and add/delete go imports
-(defun lsp-go-install-save-hooks ()
+(defun z/lsp-go-install-save-hooks ()
   (add-hook 'before-save-hook #'lsp-format-buffer t t)
   (add-hook 'before-save-hook #'lsp-organize-imports t t))
-(add-hook 'go-mode-hook #'lsp-go-install-save-hooks)
+(add-hook 'go-mode-hook #'z/lsp-go-install-save-hooks)
 
 ;; Optionally
 (use-package lsp-ui
   :ensure t
   :commands lsp-ui-mode)
+
 (use-package helm-lsp
   :ensure t
   :commands helm-lsp-workspace-symbol)
 
-(use-package company
-  :ensure t
-  :config
-  ;; Optionally enable completion-as-you-type behavior
-  (setq company-idle-delay 0)
-  (setq company-minimum-prefix-length 1))
